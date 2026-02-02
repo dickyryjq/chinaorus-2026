@@ -285,13 +285,13 @@ const CityMatchmakerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
 // --- Main App ---
 const CARDS_DATA: DecisionCard[] = [
   { id: '1', title: 'Work Culture', description: '9-9-6 Hustle vs. Harmony?', imageUrl: '/images/workculture.png' },
-  { id: '2', title: 'Food', description: '$3 Masterpiece vs. $20 Disappointment', imageUrl: 'https://images.unsplash.com/photo-1563245332-692e899746a8?q=80&w=500&h=500&auto=format&fit=crop' },
-  { id: '3', title: 'Transit', description: 'Public Transit vs. "The Car Prison"', imageUrl: 'https://images.unsplash.com/photo-1474487056217-76feef30e805?q=80&w=500&h=500&auto=format&fit=crop' },
-  { id: '4', title: 'K-12 Education', description: 'Fancy the "Unbeatable math foundation"?', imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=500&h=500&auto=format&fit=crop' },
-  { id: '5', title: 'The Dating Market', description: 'Swipe right or left?', imageUrl: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=500&h=500&auto=format&fit=crop' },
-  { id: '6', title: 'Healthcare', description: 'Who cares more?', imageUrl: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?q=80&w=500&h=500&auto=format&fit=crop' },
-  { id: '7', title: 'Elder Care', description: 'Retirement life dilemma', imageUrl: 'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?q=80&w=500&h=500&auto=format&fit=crop' },
-  { id: '8', title: 'Social Credit vs. FICO', description: "Who's got your number?", imageUrl: 'https://images.unsplash.com/photo-1551288049-bbbda536639a?q=80&w=500&h=500&auto=format&fit=crop' }
+  { id: '2', title: 'Food', description: '$3 Masterpiece vs. $20 Disappointment', imageUrl: '/images/noodle.png' },
+  { id: '3', title: 'Transit', description: 'Public Transit vs. "The Car Prison"', imageUrl: '/images/train.png' },
+  { id: '4', title: 'K-12 Education', description: 'Fancy the "Unbeatable math foundation"?', imageUrl: '/images/education.png' },
+  { id: '5', title: 'The Dating Market', description: 'Swipe right or left?', imageUrl: '/images/dating.png' },
+  { id: '6', title: 'Healthcare', description: 'Who cares more?', imageUrl: '/images/healthcare.png' },
+  { id: '7', title: 'Elder Care', description: 'Retirement life dilemma', imageUrl: '/images/elder.png' },
+  { id: '8', title: 'Social Credit vs. FICO', description: "Who's got your number?", imageUrl: '/images/socialcredit.png' }
 ];
 
 const MainApp: React.FC = () => {
@@ -304,19 +304,58 @@ const MainApp: React.FC = () => {
       return false;
     }
   });
-  const [peopleCount, setPeopleCount] = useState<number>(hasVoted ? 1249 : 1248);
+  const [peopleCount, setPeopleCount] = useState<number>(1248);
   const [selectedCard, setSelectedCard] = useState<DecisionCard | null>(null);
   const [isMatchmakerOpen, setIsMatchmakerOpen] = useState<boolean>(false);
   const [isHoveringBtn, setIsHoveringBtn] = useState<boolean>(false);
   const [siteShared, setSiteShared] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleCountIn = () => {
-    if (hasVoted) return;
-    setPeopleCount(1249);
-    setHasVoted(true);
+  // Fetch initial vote count from API
+  useEffect(() => {
+    const fetchVoteCount = async () => {
+      try {
+        const response = await fetch('/api/votes');
+        const data = await response.json();
+        setPeopleCount(data.count);
+      } catch (error) {
+        console.error('Failed to fetch vote count:', error);
+        // Fallback to default if API fails
+        setPeopleCount(1248);
+      }
+    };
+
+    fetchVoteCount();
+  }, []);
+
+  const handleCountIn = async () => {
+    if (hasVoted || isLoading) return;
+
+    setIsLoading(true);
     try {
-      localStorage.setItem('china_voted', 'true');
-    } catch (e) {}
+      // Call API to increment vote
+      const response = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPeopleCount(data.count);
+        setHasVoted(true);
+        localStorage.setItem('china_voted', 'true');
+      } else {
+        throw new Error(data.message || 'Failed to record vote');
+      }
+    } catch (error) {
+      console.error('Failed to record vote:', error);
+      alert('Failed to record your vote. Please try again!');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
     
     // Explicitly use the custom canvas for confetti
     if (canvasRef.current) {
@@ -371,17 +410,18 @@ const MainApp: React.FC = () => {
           <h2 className="mt-6 text-2xl md:text-4xl font-tomorrow font-bold text-gray-900 tracking-tight">people have decided <br className="md:hidden"/> to move to China</h2>
           <div className="mt-8 md:mt-12 flex flex-col md:flex-row gap-4 md:gap-6 justify-center items-center">
             {hasVoted ? (
-              <button onClick={() => { setHasVoted(false); setPeopleCount(1248); try { localStorage.removeItem('china_voted'); } catch(e){} }} className="w-full md:w-80 px-6 py-4 md:px-10 md:py-6 border-2 border-gray-200 text-gray-400 font-tomorrow font-bold rounded-full transition-all hover:bg-gray-50 uppercase tracking-widest text-sm">Cancel my move</button>
+              <button onClick={() => { setHasVoted(false); try { localStorage.removeItem('china_voted'); } catch(e){} }} className="w-full md:w-80 px-6 py-4 md:px-10 md:py-6 border-2 border-gray-200 text-gray-400 font-tomorrow font-bold rounded-full transition-all hover:bg-gray-50 uppercase tracking-widest text-sm">Cancel my move</button>
             ) : (
-              <button 
+              <button
                 onMouseEnter={() => setIsHoveringBtn(true)}
                 onMouseLeave={() => setIsHoveringBtn(false)}
-                onClick={handleCountIn} 
+                onClick={handleCountIn}
+                disabled={isLoading}
                 spellCheck={false}
                 data-gramm="false"
-                className="w-full md:w-96 px-6 py-4 md:px-10 md:py-6 bg-[#E60000] hover:bg-[#CC0000] text-white font-tomorrow font-bold rounded-full shadow-2xl shadow-red-500/20 transition-all active:scale-95 text-base md:text-lg whitespace-nowrap overflow-hidden text-ellipsis outline-none ring-0 focus:ring-0"
+                className="w-full md:w-96 px-6 py-4 md:px-10 md:py-6 bg-[#E60000] hover:bg-[#CC0000] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-tomorrow font-bold rounded-full shadow-2xl shadow-red-500/20 transition-all active:scale-95 text-base md:text-lg whitespace-nowrap overflow-hidden text-ellipsis outline-none ring-0 focus:ring-0"
               >
-                {isHoveringBtn ? "Start drinking warm water 🥰" : "I'm Becoming Chinese"}
+                {isLoading ? "Recording..." : (isHoveringBtn ? "Start drinking warm water 🥰" : "I'm Becoming Chinese")}
               </button>
             )}
             <button onClick={handleShareSite} className="w-full md:w-auto px-6 py-4 md:px-10 md:py-6 border-2 border-[#E60000] text-[#E60000] font-tomorrow font-bold rounded-full transition-all hover:bg-red-50 text-base md:text-lg">

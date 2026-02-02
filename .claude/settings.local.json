@@ -3,7 +3,8 @@
     "allow": [
       "Bash(test:*)",
       "Bash(npm install)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)"
     ],
     "additionalDirectories": [
       "/Users/xiaoywa/Downloads/ready-to-move-to-china-flask/static/css"

@@ -1,0 +1,13 @@
+{
+  "name": "chinaorus-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for vote counter",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0"
+  },
+  "devDependencies": {}
+}
