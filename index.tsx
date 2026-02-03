@@ -453,7 +453,7 @@ const MainApp: React.FC = () => {
     <div className="min-h-screen bg-white relative">
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[9999] w-full h-full" />
       <header className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center">
-        <span className="text-[#E60000] font-tomorrow font-bold text-xl italic tracking-tighter uppercase">Ready to China</span>
+        <a href="/" className="text-[#E60000] font-tomorrow font-bold text-xl italic tracking-tighter uppercase hover:opacity-80 transition-opacity cursor-pointer">Ready to China</a>
       </header>
       
       <section className="relative h-[320px] md:h-[480px] flex items-center px-6 md:px-20 overflow-hidden" style={{ background: 'linear-gradient(90deg, #3b3a6e 0%, #443c68 30%, #b21e35 70%, #d90429 100%)' }}>
