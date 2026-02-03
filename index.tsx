@@ -285,8 +285,8 @@ const CityMatchmakerModal: React.FC<{
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex-1 flex flex-col px-6 pb-6 md:px-16 md:pb-16 text-center space-y-4 md:space-y-8 text-white justify-center overflow-y-auto custom-scrollbar">
                   {isSharedResult && (
                     <div className="flex justify-center -mb-2 md:-mb-4">
-                      <span className="bg-white/20 backdrop-blur-sm text-white/80 px-4 py-2 rounded-full text-xs md:text-sm font-tomorrow font-bold tracking-wider uppercase">
-                        Shared Result
+                      <span className="bg-white/20 backdrop-blur-sm text-white/80 px-4 py-2 rounded-full text-xs md:text-sm font-tomorrow font-bold tracking-wider">
+                        Your friend shared their results
                       </span>
                     </div>
                   )}
@@ -493,9 +493,9 @@ const MainApp: React.FC = () => {
         </motion.div>
       </div>
 
-      <section className="py-24 md:py-40">
+      <section className="py-20 md:py-32">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-20 text-center">
+          <div className="mb-16 text-center">
             <h2 className="text-4xl md:text-7xl font-tomorrow font-bold uppercase text-gray-900 tracking-tighter">Convince Me</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
