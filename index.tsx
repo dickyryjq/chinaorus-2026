@@ -168,20 +168,42 @@ const InfoModal: React.FC<{ isOpen: boolean; onClose: () => void; card: Decision
   );
 };
 
-const CityMatchmakerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState(1);
+const CityMatchmakerModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  isSharedResult?: boolean;
+  sharedCity?: string;
+  sharedScore?: number;
+}> = ({ isOpen, onClose, isSharedResult = false, sharedCity, sharedScore }) => {
+  const [step, setStep] = useState(isSharedResult ? QUESTIONS.length + 1 : 1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [copied, setCopied] = useState(false);
-  const isFinished = step > QUESTIONS.length;
+  const isFinished = step > QUESTIONS.length || isSharedResult;
   
   const result = useMemo((): ResultData => {
+    // If viewing a shared result, use the shared city data
+    if (isSharedResult && sharedCity) {
+      const cityResults: Record<string, ResultData> = {
+        "Shanghai": { city: "Shanghai", tagline: "The global elite.", desc: "Center of the universe.", roast: "Your VPN is your only personality trait.", imageUrl: "https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?auto=format&fit=crop&q=80&w=1000" },
+        "Chengdu": { city: "Chengdu", tagline: "The chill specialist.", desc: "Loophole to happiness.", roast: "The spicy oil will claim your soul eventually.", imageUrl: "https://images.unsplash.com/photo-1723210670026-fee99db90289?auto=format&fit=crop&q=80&w=1000" },
+        "Guangzhou": { city: "Guangzhou", tagline: "The culinary master.", desc: "Eat and exist in peace.", roast: "You're just here for the Dim Sum.", imageUrl: "https://images.unsplash.com/photo-1636259584602-5a3c9c0d05ff?auto=format&fit=crop&q=80&w=1000" }
+      };
+      return cityResults[sharedCity] || cityResults["Guangzhou"];
+    }
+
+    // Otherwise, calculate from quiz answers
     const combo = Object.values(answers).join('');
     if (combo.includes('A') && combo.includes('C')) return { city: "Shanghai", tagline: "The global elite.", desc: "Center of the universe.", roast: "Your VPN is your only personality trait.", imageUrl: "https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?auto=format&fit=crop&q=80&w=1000" };
     if (combo.includes('B') && combo.includes('D')) return { city: "Chengdu", tagline: "The chill specialist.", desc: "Loophole to happiness.", roast: "The spicy oil will claim your soul eventually.", imageUrl: "https://images.unsplash.com/photo-1723210670026-fee99db90289?auto=format&fit=crop&q=80&w=1000" };
     return { city: "Guangzhou", tagline: "The culinary master.", desc: "Eat and exist in peace.", roast: "You're just here for the Dim Sum.", imageUrl: "https://images.unsplash.com/photo-1636259584602-5a3c9c0d05ff?auto=format&fit=crop&q=80&w=1000" };
-  }, [answers]);
+  }, [answers, isSharedResult, sharedCity]);
 
-  const readinessScore = useMemo(() => 84 + (Object.values(answers).join('').length % 15), [answers]);
+  const readinessScore = useMemo(() => {
+    // If viewing a shared result, use the shared score
+    if (isSharedResult && sharedScore) return sharedScore;
+    // Otherwise, calculate from quiz answers
+    return 84 + (Object.values(answers).join('').length % 15);
+  }, [answers, isSharedResult, sharedScore]);
 
   const handleSelect = (qId: number, value: string) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
@@ -195,10 +217,20 @@ const CityMatchmakerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`I'm ${readinessScore}% ready for China. Suggested city: ${result.city}`).then(() => {
+    // Generate shareable URL with result data
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?city=${encodeURIComponent(result.city)}&score=${readinessScore}`;
+
+    navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  const handleTakeQuiz = () => {
+    // Close modal and reload page to take quiz
+    onClose();
+    window.location.href = window.location.origin + window.location.pathname;
   };
 
   const reset = () => { setStep(1); setAnswers({}); onClose(); };
@@ -251,6 +283,13 @@ const CityMatchmakerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                 </motion.div>
               ) : (
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex-1 flex flex-col px-6 pb-6 md:px-16 md:pb-16 text-center space-y-4 md:space-y-8 text-white justify-center overflow-y-auto custom-scrollbar">
+                  {isSharedResult && (
+                    <div className="flex justify-center -mb-2 md:-mb-4">
+                      <span className="bg-white/20 backdrop-blur-sm text-white/80 px-4 py-2 rounded-full text-xs md:text-sm font-tomorrow font-bold tracking-wider uppercase">
+                        Shared Result
+                      </span>
+                    </div>
+                  )}
                   <div className="relative h-48 md:h-96 w-full rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl shrink-0">
                     <img src={result.imageUrl} className="w-full h-full object-cover" alt={result.city}/>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col items-center justify-end p-6 md:p-8">
@@ -271,7 +310,11 @@ const CityMatchmakerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = 
                         <p className="text-lg md:text-3xl italic font-bold leading-relaxed">"{result.roast}"</p>
                     </div>
                   </div>
-                  <button onClick={handleCopy} className="bg-white text-[#E60000] font-tomorrow font-bold px-8 py-4 md:px-12 md:py-6 rounded-full text-lg md:text-xl hover:bg-red-50 transition-all active:scale-95 shadow-lg mb-4">{copied ? "Copied!" : "Share Result"}</button>
+                  {isSharedResult ? (
+                    <button onClick={handleTakeQuiz} className="bg-white text-[#E60000] font-tomorrow font-bold px-8 py-4 md:px-12 md:py-6 rounded-full text-lg md:text-xl hover:bg-red-50 transition-all active:scale-95 shadow-lg mb-4">Should I move to China?</button>
+                  ) : (
+                    <button onClick={handleCopy} className="bg-white text-[#E60000] font-tomorrow font-bold px-8 py-4 md:px-12 md:py-6 rounded-full text-lg md:text-xl hover:bg-red-50 transition-all active:scale-95 shadow-lg mb-4">{copied ? "Copied!" : "Share Result"}</button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -310,6 +353,25 @@ const MainApp: React.FC = () => {
   const [isHoveringBtn, setIsHoveringBtn] = useState<boolean>(false);
   const [siteShared, setSiteShared] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Shared result state
+  const [isSharedResult, setIsSharedResult] = useState<boolean>(false);
+  const [sharedCity, setSharedCity] = useState<string | undefined>(undefined);
+  const [sharedScore, setSharedScore] = useState<number | undefined>(undefined);
+
+  // Check for shared result in URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const city = urlParams.get('city');
+    const score = urlParams.get('score');
+
+    if (city && score) {
+      setIsSharedResult(true);
+      setSharedCity(city);
+      setSharedScore(parseInt(score, 10));
+      setIsMatchmakerOpen(true);
+    }
+  }, []);
 
   // Fetch initial vote count from API
   useEffect(() => {
@@ -446,7 +508,16 @@ const MainApp: React.FC = () => {
         </div>
       </section>
 
-      <CityMatchmakerModal isOpen={isMatchmakerOpen} onClose={() => setIsMatchmakerOpen(false)} />
+      <CityMatchmakerModal
+        isOpen={isMatchmakerOpen}
+        onClose={() => {
+          setIsMatchmakerOpen(false);
+          setIsSharedResult(false);
+        }}
+        isSharedResult={isSharedResult}
+        sharedCity={sharedCity}
+        sharedScore={sharedScore}
+      />
       <InfoModal isOpen={!!selectedCard} onClose={() => setSelectedCard(null)} card={selectedCard} />
       
       <footer className="py-20 text-center text-gray-300 font-tomorrow font-bold text-xs border-t border-gray-50 tracking-[0.5em] uppercase">
